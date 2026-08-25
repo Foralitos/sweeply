@@ -1,0 +1,39 @@
+{
+  "name": "sweeply",
+  "version": "0.1.0",
+  "description": "TUI para encontrar y borrar peso muerto de tus proyectos (node_modules, .next, venv...) con semáforo de seguridad git",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "sweeply": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "tsx src/cli.tsx",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "cli",
+    "node_modules",
+    "cleanup",
+    "disk-space",
+    "tui"
+  ],
+  "dependencies": {
+    "ink": "^7.1.1",
+    "react": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "^26.3.0",
+    "@types/react": "^19.2.18",
+    "tsup": "^8.5.1",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
+  }
+}
