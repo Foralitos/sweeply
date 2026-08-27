@@ -1,6 +1,6 @@
 {
   "name": "sweeply",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "TUI to find and delete dead weight in your projects (node_modules, .next, venv...) with a git safety traffic light",
   "license": "MIT",
   "author": "Fora (Ángel Iván López Delgado)",
