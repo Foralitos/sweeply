@@ -7,6 +7,7 @@ import type { TargetDef } from '../core/targets.js'
 import { dirSize, formatSize } from '../core/size.js'
 import { gitStatus, type GitStatus } from '../core/git.js'
 import { removeTargets } from '../core/remove.js'
+import { checkForUpdate, type UpdateInfo } from '../core/update.js'
 import { ProjectRow } from './ProjectRow.js'
 import { Footer } from './Footer.js'
 
@@ -31,6 +32,18 @@ export function App({ rootDir, targets }: { rootDir: string; targets: TargetDef[
   const [sortBySize, setSortBySize] = useState(false)
   const [freedSize, setFreedSize] = useState(0)
   const [deleteProgress, setDeleteProgress] = useState('')
+  const [update, setUpdate] = useState<UpdateInfo | null>(null)
+
+  // chequeo de versión: sin await en el arranque, si falla no se muestra nada
+  useEffect(() => {
+    let cancelled = false
+    void checkForUpdate().then((info) => {
+      if (!cancelled && info) setUpdate(info)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const patchRow = (projectPath: string, patch: Partial<Row>) => {
     setRows((prev) =>
@@ -171,6 +184,15 @@ export function App({ rootDir, targets }: { rootDir: string; targets: TargetDef[
       {mode === 'deleting' && (
         <Box marginTop={1}>
           <Text color="yellow">borrando… {deleteProgress}</Text>
+        </Box>
+      )}
+
+      {update && (
+        <Box marginTop={1}>
+          <Text color="yellow">
+            Hay una versión nueva ({update.current} → {update.latest}). Corre:{' '}
+            <Text bold>{update.command}</Text>
+          </Text>
         </Box>
       )}
 
