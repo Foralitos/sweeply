@@ -21,7 +21,10 @@ export function Footer({
       <Text color="gray">
         {'↑↓ navegar · espacio seleccionar · a seleccionar 🟢 · enter borrar'}
         {selectedCount > 0 && (
-          <Text color="white"> ({selectedCount} = {formatSize(selectedSize)})</Text>
+          <Text color="red" bold>
+            {' '}
+            ✗ {selectedCount} marcados = {formatSize(selectedSize)}
+          </Text>
         )}
         {' · g detalle git · s orden'}
         {sortBySize ? ' (tamaño)' : ''}

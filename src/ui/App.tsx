@@ -112,6 +112,9 @@ export function App({ rootDir, targets }: { rootDir: string; targets: TargetDef[
 
   // ventana de scroll según altura de terminal
   const listHeight = Math.max(5, (stdout?.rows ?? 24) - 8)
+  // -1 para no tocar la última columna: si el renglón llena el ancho exacto,
+  // algunas terminales meten un salto de línea extra y se rompe la lista
+  const rowWidth = Math.max(20, (stdout?.columns ?? 80) - 1)
   const offset = Math.max(0, Math.min(cursor - Math.floor(listHeight / 2), visible.length - listHeight))
   const windowRows = visible.slice(offset, offset + listHeight)
 
@@ -134,7 +137,12 @@ export function App({ rootDir, targets }: { rootDir: string; targets: TargetDef[
       )}
 
       {windowRows.map((row, i) => (
-        <ProjectRow key={row.project.path} row={row} isCursor={offset + i === cursor} />
+        <ProjectRow
+          key={row.project.path}
+          row={row}
+          isCursor={offset + i === cursor}
+          width={rowWidth}
+        />
       ))}
 
       {showDetail && current?.git && (
