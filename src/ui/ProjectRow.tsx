@@ -2,6 +2,7 @@ import React from 'react'
 import { Box, Text } from 'ink'
 import type { Row } from './App.js'
 import { formatSize } from '../core/size.js'
+import { t } from '../core/i18n.js'
 
 const SEM_COLOR = { green: 'green', yellow: 'yellow', red: 'red' } as const
 
@@ -53,7 +54,7 @@ export function ProjectRow({
       </Box>
       <Box width={9} justifyContent="flex-end" marginRight={2}>
         <Text backgroundColor={bg} color={sizeColor} bold={marked}>
-          {row.deleted ? 'liberado' : formatSize(row.size)}
+          {row.deleted ? t().freedCell : formatSize(row.size)}
         </Text>
       </Box>
       <Box width={16}>

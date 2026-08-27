@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import fs from 'node:fs/promises'
+import { t } from './i18n.js'
 
 const run = promisify(execFile)
 
@@ -8,7 +9,7 @@ export type Semaphore = 'green' | 'yellow' | 'red'
 
 export interface GitStatus {
   semaphore: Semaphore
-  /** Resumen corto para la fila: "pusheado", "3 sin commit", "2 sin push", "sin remoto", "sin git" */
+  /** Resumen corto para la fila, ya traducido: "pushed", "3 uncommitted", "no git"… */
   summary: string
   /** Detalle multilínea para el panel g */
   detail: string
@@ -35,8 +36,8 @@ export async function gitStatus(projectDir: string): Promise<GitStatus> {
   } catch {
     return {
       semaphore: 'red',
-      summary: 'sin git',
-      detail: 'Este directorio no es un repositorio git.\nSi borras el proyecto completo no hay forma de recuperarlo.',
+      summary: t().git.noGit,
+      detail: t().git.noGitDetail,
       lastActivity,
     }
   }
@@ -60,7 +61,7 @@ export async function gitStatus(projectDir: string): Promise<GitStatus> {
     dirtyLines = porcelain ? porcelain.split('\n') : []
   } catch {
     // si status falla lo tratamos como sucio por precaución
-    dirtyLines = ['(git status falló)']
+    dirtyLines = [t().git.statusFailed]
   }
 
   let ahead: number | null = null
@@ -71,35 +72,35 @@ export async function gitStatus(projectDir: string): Promise<GitStatus> {
     hasUpstream = false
   }
 
-  const detailParts = [`rama: ${branch || '(detached)'}`]
+  const detailParts = [t().git.branch(branch || t().git.detached)]
   if (dirtyLines.length > 0) {
     detailParts.push(
-      `${dirtyLines.length} archivo(s) sin commitear:`,
+      t().git.filesUncommitted(dirtyLines.length),
       ...dirtyLines.slice(0, 8).map((l) => `  ${l}`),
     )
-    if (dirtyLines.length > 8) detailParts.push(`  … y ${dirtyLines.length - 8} más`)
+    if (dirtyLines.length > 8) detailParts.push(t().git.andMore(dirtyLines.length - 8))
   }
-  if (!hasUpstream) detailParts.push('sin rama remota configurada (no hay respaldo en un servidor)')
-  else if (ahead && ahead > 0) detailParts.push(`${ahead} commit(s) sin pushear`)
+  if (!hasUpstream) detailParts.push(t().git.noUpstreamDetail)
+  else if (ahead && ahead > 0) detailParts.push(t().git.unpushedDetail(ahead))
 
   if (dirtyLines.length > 0) {
     return {
       semaphore: 'yellow',
-      summary: `${dirtyLines.length} sin commit`,
+      summary: t().git.uncommitted(dirtyLines.length),
       detail: detailParts.join('\n'),
       lastActivity,
     }
   }
   if (!hasUpstream) {
-    return { semaphore: 'yellow', summary: 'sin remoto', detail: detailParts.join('\n'), lastActivity }
+    return { semaphore: 'yellow', summary: t().git.noRemote, detail: detailParts.join('\n'), lastActivity }
   }
   if (ahead && ahead > 0) {
-    return { semaphore: 'yellow', summary: `${ahead} sin push`, detail: detailParts.join('\n'), lastActivity }
+    return { semaphore: 'yellow', summary: t().git.unpushed(ahead), detail: detailParts.join('\n'), lastActivity }
   }
   return {
     semaphore: 'green',
-    summary: 'pusheado',
-    detail: detailParts.concat('Todo commiteado y pusheado. Borrar aquí es 100% recuperable.').join('\n'),
+    summary: t().git.pushed,
+    detail: detailParts.concat(t().git.allGoodDetail).join('\n'),
     lastActivity,
   }
 }

@@ -8,6 +8,7 @@ import { dirSize, formatSize } from '../core/size.js'
 import { gitStatus, type GitStatus } from '../core/git.js'
 import { removeTargets } from '../core/remove.js'
 import { checkForUpdate, type UpdateInfo } from '../core/update.js'
+import { t } from '../core/i18n.js'
 import { ProjectRow } from './ProjectRow.js'
 import { Footer } from './Footer.js'
 
@@ -93,7 +94,7 @@ export function App({ rootDir, targets }: { rootDir: string; targets: TargetDef[
         setFreedSize((f) => f + (row.size ?? 0))
         patchRow(row.project.path, { deleted: true, selected: false })
       } else {
-        setDeleteProgress(`error en ${row.project.name}: ${failed[0]!.error}`)
+        setDeleteProgress(t().errorIn(row.project.name, String(failed[0]!.error)))
       }
     }
     setDeleteProgress('')
@@ -133,6 +134,7 @@ export function App({ rootDir, targets }: { rootDir: string; targets: TargetDef[
 
   const totalFound = rows.reduce((a, r) => a + (r.size ?? 0), 0)
   const displayDir = path.resolve(rootDir).replace(os.homedir(), '~')
+  const msg = t()
 
   return (
     <Box flexDirection="column">
@@ -140,13 +142,13 @@ export function App({ rootDir, targets }: { rootDir: string; targets: TargetDef[
         <Text bold color="cyan">sweeply</Text>
         <Text wrap="truncate">
           <Text color="gray"> · {displayDir}</Text>
-          <Text> · {scanning ? 'escaneando…' : `${rows.length} proyectos`}</Text>
-          <Text color="magenta"> · {formatSize(totalFound)} recuperables</Text>
+          <Text> · {scanning ? msg.scanning : msg.projects(rows.length)}</Text>
+          <Text color="magenta"> · {formatSize(totalFound)} {msg.reclaimable}</Text>
         </Text>
       </Box>
 
       {rows.length === 0 && !scanning && (
-        <Text color="gray">No encontré nada que limpiar en {rootDir}.</Text>
+        <Text color="gray">{msg.nothingToClean(rootDir)}</Text>
       )}
 
       {windowRows.map((row, i) => (
@@ -169,28 +171,28 @@ export function App({ rootDir, targets }: { rootDir: string; targets: TargetDef[
 
       {mode === 'confirm' && (
         <Box flexDirection="column" borderStyle="double" borderColor="red" paddingX={1} marginTop={1}>
-          <Text bold color="red">¿Borrar {selected.length} proyecto(s) — {formatSize(selectedSize)}?</Text>
+          <Text bold color="red">{msg.confirmTitle(selected.length, formatSize(selectedSize))}</Text>
           {selected.slice(0, 6).map((r) => (
             <Text key={r.project.path}>
               {'  '}{r.project.name}: {r.project.targets.map((t) => t.name).join(', ')}
             </Text>
           ))}
-          {selected.length > 6 && <Text color="gray">  … y {selected.length - 6} más</Text>}
-          <Text color="gray">Solo se borran las carpetas regenerables, nunca tu código.</Text>
-          <Text bold>y = sí, borrar · n = cancelar</Text>
+          {selected.length > 6 && <Text color="gray">{msg.andMore(selected.length - 6)}</Text>}
+          <Text color="gray">{msg.onlyRegenerable}</Text>
+          <Text bold>{msg.confirmKeys}</Text>
         </Box>
       )}
 
       {mode === 'deleting' && (
         <Box marginTop={1}>
-          <Text color="yellow">borrando… {deleteProgress}</Text>
+          <Text color="yellow">{msg.deleting} {deleteProgress}</Text>
         </Box>
       )}
 
       {update && (
         <Box marginTop={1}>
           <Text color="yellow">
-            Hay una versión nueva ({update.current} → {update.latest}). Corre:{' '}
+            {msg.updateAvailable(update.current, update.latest)}
             <Text bold>{update.command}</Text>
           </Text>
         </Box>

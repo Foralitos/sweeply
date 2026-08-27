@@ -1,6 +1,7 @@
 import React from 'react'
 import { Box, Text } from 'ink'
 import { formatSize } from '../core/size.js'
+import { t } from '../core/i18n.js'
 
 export function Footer({
   selectedCount,
@@ -13,22 +14,21 @@ export function Footer({
   freedSize: number
   sortBySize: boolean
 }) {
+  const msg = t()
   return (
     <Box flexDirection="column" marginTop={1}>
-      {freedSize > 0 && (
-        <Text color="green">✔ liberado en esta sesión: {formatSize(freedSize)}</Text>
-      )}
+      {freedSize > 0 && <Text color="green">{msg.freedThisSession(formatSize(freedSize))}</Text>}
       <Text color="gray">
-        {'↑↓ navegar · espacio seleccionar · a seleccionar 🟢 · enter borrar'}
+        {msg.keysMain}
         {selectedCount > 0 && (
           <Text color="red" bold>
             {' '}
-            ✗ {selectedCount} marcados = {formatSize(selectedSize)}
+            {msg.marked(selectedCount, formatSize(selectedSize))}
           </Text>
         )}
-        {' · g detalle git · s orden'}
-        {sortBySize ? ' (tamaño)' : ''}
-        {' · q salir'}
+        {msg.keysTail}
+        {sortBySize ? msg.sortSuffix : ''}
+        {msg.keysQuit}
       </Text>
     </Box>
   )
