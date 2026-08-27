@@ -1,7 +1,7 @@
 {
   "name": "sweeply",
   "version": "0.2.0",
-  "description": "TUI para encontrar y borrar peso muerto de tus proyectos (node_modules, .next, venv...) con semáforo de seguridad git",
+  "description": "TUI to find and delete dead weight in your projects (node_modules, .next, venv...) with a git safety traffic light",
   "license": "MIT",
   "author": "Fora (Ángel Iván López Delgado)",
   "homepage": "https://github.com/Foralitos/sweeply#readme",
