@@ -21,7 +21,8 @@ Uso: sweeply [opciones]
   -h, --help             esta ayuda
 
 Dentro de la interfaz: ↑↓ navegar · espacio seleccionar · a seleccionar
-todo lo 🟢 · enter borrar (pide confirmación) · g detalle git · q salir`)
+todo lo 🟢 · enter borrar (pide confirmación) · g detalle git · s ordenar
+por tamaño · q salir`)
       process.exit(0)
     }
   }

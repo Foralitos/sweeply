@@ -3,27 +3,45 @@
   "version": "0.1.0",
   "description": "TUI para encontrar y borrar peso muerto de tus proyectos (node_modules, .next, venv...) con semáforo de seguridad git",
   "license": "MIT",
+  "author": "Fora (Ángel Iván López Delgado)",
+  "homepage": "https://github.com/Foralitos/sweeply#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Foralitos/sweeply.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Foralitos/sweeply/issues"
+  },
   "type": "module",
   "bin": {
     "sweeply": "dist/cli.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "dev": "tsx src/cli.tsx",
     "build": "tsup",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "yarn typecheck && yarn build"
   },
   "keywords": [
     "cli",
+    "tui",
     "node_modules",
     "cleanup",
     "disk-space",
-    "tui"
+    "npkill",
+    "monorepo",
+    "ink"
   ],
   "dependencies": {
     "ink": "^7.1.1",
