@@ -23,9 +23,12 @@ npx sweeply                 # scan your home
 npx sweeply --dir ~/Sites   # scan a specific folder
 npx sweeply -t .cache,tmp   # detect extra folders
 npx sweeply --lang es       # force the interface language
+npx sweeply --all           # scan the whole computer
 ```
 
 The interface follows your system locale (`LANG` / `LC_ALL`): Spanish if it starts with `es`, English otherwise. `--lang en|es` overrides it.
+
+`--all` (`-a`) scans from `/` instead of a single folder. It skips system directories (`/System`, `/Library`, `/usr`, etc.) automatically, and if it finds external volumes under `/Volumes`, it asks for permission before including each one — none are scanned by default.
 
 ### Keys
 
@@ -88,9 +91,12 @@ npx sweeply                 # escanea tu home
 npx sweeply --dir ~/Sites   # escanea una carpeta específica
 npx sweeply -t .cache,tmp   # detecta carpetas extra
 npx sweeply --lang en       # fuerza el idioma de la interfaz
+npx sweeply --all           # escanea toda la computadora
 ```
 
 La interfaz sigue el locale de tu sistema (`LANG` / `LC_ALL`): español si empieza con `es`, inglés en cualquier otro caso. `--lang en|es` lo fuerza.
+
+`--all` (`-a`) escanea desde `/` en vez de una sola carpeta. Salta automáticamente los directorios del sistema (`/System`, `/Library`, `/usr`, etc.) y, si encuentra volúmenes externos bajo `/Volumes`, pide permiso antes de incluir cada uno — ninguno se escanea por default.
 
 #### Teclas
 

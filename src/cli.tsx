@@ -10,17 +10,19 @@ function parseArgs(argv: string[]) {
   let extraTargets: string[] = []
   let lang: string | undefined
   let help = false
+  let all = false
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]!
     if (arg === '--dir' || arg === '-d') dir = argv[++i] ?? dir
     else if (arg === '--targets' || arg === '-t') extraTargets = (argv[++i] ?? '').split(',')
     else if (arg === '--lang' || arg === '-l') lang = argv[++i]
+    else if (arg === '--all' || arg === '-a') all = true
     else if (arg === '--help' || arg === '-h') help = true
   }
-  return { dir, extraTargets, lang, help }
+  return { dir, extraTargets, lang, help, all }
 }
 
-const { dir, extraTargets, lang, help } = parseArgs(process.argv.slice(2))
+const { dir, extraTargets, lang, help, all } = parseArgs(process.argv.slice(2))
 
 // el idioma se fija antes de cualquier salida, incluida la ayuda
 setLang(detectLang(lang))
@@ -30,4 +32,4 @@ if (help) {
   process.exit(0)
 }
 
-render(<App rootDir={dir} targets={buildTargets(extraTargets)} />)
+render(<App rootDir={dir} targets={buildTargets(extraTargets)} all={all} />)

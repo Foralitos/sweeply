@@ -2,15 +2,17 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Box, Text, useApp, useInput, useStdout } from 'ink'
 import path from 'node:path'
 import os from 'node:os'
-import { scan, type FoundProject } from '../core/scanner.js'
+import { scan, ALL_SCAN_MAX_DEPTH, SYSTEM_DENYLIST, type FoundProject } from '../core/scanner.js'
 import type { TargetDef } from '../core/targets.js'
 import { dirSize, formatSize } from '../core/size.js'
 import { gitStatus, type GitStatus } from '../core/git.js'
 import { removeTargets } from '../core/remove.js'
 import { checkForUpdate, type UpdateInfo } from '../core/update.js'
+import { listVolumeCandidates, type VolumeCandidate } from '../core/volumes.js'
 import { t } from '../core/i18n.js'
 import { ProjectRow } from './ProjectRow.js'
 import { Footer } from './Footer.js'
+import { VolumePrompt } from './VolumePrompt.js'
 
 export interface Row {
   project: FoundProject
@@ -22,7 +24,18 @@ export interface Row {
 
 type Mode = 'list' | 'confirm' | 'deleting'
 
-export function App({ rootDir, targets }: { rootDir: string; targets: TargetDef[] }) {
+/** Fase previa al escaneo cuando --all necesita permiso para volúmenes externos */
+type VolumePhase = 'checking' | 'prompt' | 'ready'
+
+export function App({
+  rootDir,
+  targets,
+  all = false,
+}: {
+  rootDir: string
+  targets: TargetDef[]
+  all?: boolean
+}) {
   const { exit } = useApp()
   const { stdout } = useStdout()
   const [rows, setRows] = useState<Row[]>([])
@@ -34,6 +47,35 @@ export function App({ rootDir, targets }: { rootDir: string; targets: TargetDef[
   const [freedSize, setFreedSize] = useState(0)
   const [deleteProgress, setDeleteProgress] = useState('')
   const [update, setUpdate] = useState<UpdateInfo | null>(null)
+
+  // en modo --all primero hay que preguntar por los volúmenes externos antes
+  // de arrancar el escaneo; en modo normal ya arrancamos "ready" con rootDir
+  const [volumePhase, setVolumePhase] = useState<VolumePhase>(all ? 'checking' : 'ready')
+  const [volumeCandidates, setVolumeCandidates] = useState<VolumeCandidate[]>([])
+  const [scanRoots, setScanRoots] = useState<string[]>(all ? [] : [rootDir])
+
+  useEffect(() => {
+    if (!all) return
+    let cancelled = false
+    void listVolumeCandidates().then((vols) => {
+      if (cancelled) return
+      if (vols.length === 0) {
+        setScanRoots(['/'])
+        setVolumePhase('ready')
+      } else {
+        setVolumeCandidates(vols)
+        setVolumePhase('prompt')
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [all])
+
+  const handleVolumeConfirm = (approved: VolumeCandidate[]) => {
+    setScanRoots(['/', ...approved.map((v) => v.path)])
+    setVolumePhase('ready')
+  }
 
   // chequeo de versión: sin await en el arranque, si falla no se muestra nada
   useEffect(() => {
@@ -53,9 +95,11 @@ export function App({ rootDir, targets }: { rootDir: string; targets: TargetDef[
   }
 
   useEffect(() => {
+    if (volumePhase !== 'ready') return
     let cancelled = false
+    const options = all ? { maxDepth: ALL_SCAN_MAX_DEPTH, denylist: SYSTEM_DENYLIST } : undefined
     ;(async () => {
-      for await (const project of scan(rootDir, targets)) {
+      for await (const project of scan(scanRoots, targets, options)) {
         if (cancelled) return
         setRows((prev) => [...prev, { project, selected: false, deleted: false }])
         // tamaño y git en paralelo, sin bloquear el escaneo
@@ -71,7 +115,7 @@ export function App({ rootDir, targets }: { rootDir: string; targets: TargetDef[
     return () => {
       cancelled = true
     }
-  }, [rootDir, targets])
+  }, [volumePhase, scanRoots, targets, all])
 
   const visible = useMemo(() => {
     const list = [...rows]
@@ -102,6 +146,7 @@ export function App({ rootDir, targets }: { rootDir: string; targets: TargetDef[
   }
 
   useInput((input, key) => {
+    if (volumePhase !== 'ready') return // VolumePrompt maneja su propio input
     if (mode === 'deleting') return
     if (mode === 'confirm') {
       if (input === 'y' || input === 's') void doDelete()
@@ -133,8 +178,21 @@ export function App({ rootDir, targets }: { rootDir: string; targets: TargetDef[
   const windowRows = visible.slice(offset, offset + listHeight)
 
   const totalFound = rows.reduce((a, r) => a + (r.size ?? 0), 0)
-  const displayDir = path.resolve(rootDir).replace(os.homedir(), '~')
+  const displayDir = all ? '/' : path.resolve(rootDir).replace(os.homedir(), '~')
   const msg = t()
+
+  if (volumePhase === 'checking') {
+    return (
+      <Box flexDirection="column">
+        <Text bold color="cyan">sweeply</Text>
+        <Text color="gray">{msg.detectingVolumes}</Text>
+      </Box>
+    )
+  }
+
+  if (volumePhase === 'prompt') {
+    return <VolumePrompt volumes={volumeCandidates} onConfirm={handleVolumeConfirm} />
+  }
 
   return (
     <Box flexDirection="column">
@@ -148,7 +206,7 @@ export function App({ rootDir, targets }: { rootDir: string; targets: TargetDef[
       </Box>
 
       {rows.length === 0 && !scanning && (
-        <Text color="gray">{msg.nothingToClean(rootDir)}</Text>
+        <Text color="gray">{msg.nothingToClean(displayDir)}</Text>
       )}
 
       {windowRows.map((row, i) => (
