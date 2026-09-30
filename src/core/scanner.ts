@@ -31,23 +31,86 @@ const SKIP_DIRS = new Set([
 const MAX_DEPTH = 8
 
 /**
+ * Profundidad máxima para el modo --all: al arrancar desde raíces más altas
+ * (/, volúmenes externos) hacen falta más niveles para llegar a los proyectos
+ * del usuario que con el home como raíz.
+ */
+export const ALL_SCAN_MAX_DEPTH = 12
+
+/**
+ * Rutas absolutas del sistema que --all nunca desciende. /Volumes se incluye
+ * aquí porque los volúmenes externos aprobados se agregan como raíces propias
+ * (ver core/volumes.ts); así evitamos re-descubrirlos sin permiso.
+ */
+export const SYSTEM_DENYLIST = [
+  '/System',
+  '/Library',
+  '/private',
+  '/dev',
+  '/usr',
+  '/bin',
+  '/sbin',
+  '/opt',
+  '/cores',
+  '/Applications',
+  '/etc',
+  '/tmp',
+  '/var',
+  '/Volumes',
+]
+
+export interface ScanOptions {
+  /** Profundidad máxima de BFS desde cada raíz. Default: MAX_DEPTH (8). */
+  maxDepth?: number
+  /** Rutas absolutas en las que nunca se desciende (ver SYSTEM_DENYLIST). */
+  denylist?: string[]
+}
+
+/**
  * Recorre el filesystem buscando directorios-target. Emite un FoundProject
  * por cada directorio que contenga al menos un target (streaming, para que
  * la UI se llene mientras escanea). No desciende dentro de targets ni de
  * carpetas ocultas.
+ *
+ * Acepta una o varias raíces (el modo --all escanea desde "/" más los
+ * volúmenes externos aprobados). Con varias raíces deduplica por realpath
+ * por si se solapan. Ojo: realpath NO resuelve firmlinks; el caso
+ * /System/Volumes/Data (espejo de /Users) lo evita la denylist, no esto.
  */
 export async function* scan(
-  rootDir: string,
+  rootDirs: string | string[],
   targets: TargetDef[],
+  options: ScanOptions = {},
 ): AsyncGenerator<FoundProject> {
+  const roots = Array.isArray(rootDirs) ? rootDirs : [rootDirs]
+  const maxDepth = options.maxDepth ?? MAX_DEPTH
+  const denylist = new Set(options.denylist ?? [])
+  const homeDir = os.homedir()
+
   const byName = new Map(targets.map((t) => [t.name, t]))
-  const isHome = path.resolve(rootDir) === os.homedir()
-  const queue: Array<{ dir: string; depth: number }> = [
-    { dir: path.resolve(rootDir), depth: 0 },
-  ]
+  const visited = new Set<string>()
+  const queue: Array<{ dir: string; depth: number }> = roots.map((root) => ({
+    dir: path.resolve(root),
+    depth: 0,
+  }))
 
   while (queue.length > 0) {
     const { dir, depth } = queue.shift()!
+
+    // dedupe por realpath solo con varias raíces: con una sola, el recorrido
+    // ya no repite directorios (los symlinks se saltan) y evitamos un
+    // syscall extra por carpeta
+    if (roots.length > 1) {
+      let real
+      try {
+        real = await fs.realpath(dir)
+      } catch {
+        continue // desapareció o sin permisos: seguimos
+      }
+      if (visited.has(real)) continue
+      visited.add(real)
+    }
+
     let entries
     try {
       entries = await fs.readdir(dir, { withFileTypes: true })
@@ -59,6 +122,7 @@ export async function* scan(
       entries.filter((e) => e.isFile()).map((e) => e.name),
     )
     const found: FoundTarget[] = []
+    const isHome = path.resolve(dir) === homeDir
 
     for (const entry of entries) {
       if (!entry.isDirectory() || entry.isSymbolicLink()) continue
@@ -77,9 +141,11 @@ export async function* scan(
         }
       }
       if (entry.name === '.git' || entry.name.startsWith('.')) continue
-      if (depth === 0 && isHome && SKIP_DIRS.has(entry.name)) continue
-      if (depth < MAX_DEPTH) {
-        queue.push({ dir: path.join(dir, entry.name), depth: depth + 1 })
+      const fullPath = path.join(dir, entry.name)
+      if (denylist.has(fullPath)) continue
+      if (isHome && SKIP_DIRS.has(entry.name)) continue
+      if (depth < maxDepth) {
+        queue.push({ dir: fullPath, depth: depth + 1 })
       }
     }
 

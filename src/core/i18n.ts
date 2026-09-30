@@ -40,6 +40,10 @@ export interface Strings {
   keysQuit: string
   freedCell: string
   updateAvailable: (current: string, latest: string) => string
+  detectingVolumes: string
+  volumesTitle: string
+  volumesHint: string
+  volumesKeys: string
   git: {
     pushed: string
     noGit: string
@@ -66,10 +70,14 @@ Usage: sweeply [options]
   -d, --dir <path>       where to look (default: your home)
   -t, --targets <a,b>    extra folders to detect, comma separated
   -l, --lang <en|es>     interface language (default: your system locale)
+  -a, --all              scan the whole computer, not just --dir
   -h, --help             this help
 
 Inside the UI: ↑↓ move · space select · a select every 🟢 · enter delete
-(asks for confirmation) · g git detail · s sort by size · q quit`,
+(asks for confirmation) · g git detail · s sort by size · q quit
+
+With --all: sweeply scans from / and asks for permission before including
+any external volume found under /Volumes.`,
   scanning: 'scanning…',
   projects: (n) => `${n} project${n === 1 ? '' : 's'}`,
   reclaimable: 'reclaimable',
@@ -88,6 +96,10 @@ Inside the UI: ↑↓ move · space select · a select every 🟢 · enter delet
   keysQuit: ' · q quit',
   freedCell: 'freed',
   updateAvailable: (current, latest) => `A new version is available (${current} → ${latest}). Run: `,
+  detectingVolumes: 'detecting external volumes…',
+  volumesTitle: 'external volumes found',
+  volumesHint: 'Choose which external volumes to include in the scan (none are included by default).',
+  volumesKeys: '↑↓ move · space toggle · enter confirm · esc skip all',
   git: {
     pushed: 'pushed',
     noGit: 'no git',
@@ -115,11 +127,15 @@ Uso: sweeply [opciones]
   -d, --dir <ruta>       dónde buscar (default: tu home)
   -t, --targets <a,b>    carpetas extra a detectar, separadas por coma
   -l, --lang <en|es>     idioma de la interfaz (default: el de tu sistema)
+  -a, --all              escanea toda la computadora, no solo --dir
   -h, --help             esta ayuda
 
 Dentro de la interfaz: ↑↓ navegar · espacio seleccionar · a seleccionar
 todo lo 🟢 · enter borrar (pide confirmación) · g detalle git · s ordenar
-por tamaño · q salir`,
+por tamaño · q salir
+
+Con --all: sweeply escanea desde / y pide permiso antes de incluir
+cualquier volumen externo que encuentre bajo /Volumes.`,
   scanning: 'escaneando…',
   projects: (n) => `${n} proyecto${n === 1 ? '' : 's'}`,
   reclaimable: 'recuperables',
@@ -138,6 +154,10 @@ por tamaño · q salir`,
   keysQuit: ' · q salir',
   freedCell: 'liberado',
   updateAvailable: (current, latest) => `Hay una versión nueva (${current} → ${latest}). Corre: `,
+  detectingVolumes: 'detectando volúmenes externos…',
+  volumesTitle: 'volúmenes externos encontrados',
+  volumesHint: 'Elegí qué volúmenes externos incluir en el escaneo (ninguno se incluye por default).',
+  volumesKeys: '↑↓ navegar · espacio marcar · enter confirmar · esc omitir todos',
   git: {
     pushed: 'pusheado',
     noGit: 'sin git',
